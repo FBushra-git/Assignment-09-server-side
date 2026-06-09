@@ -68,7 +68,26 @@ async function run() {
   });
 
   // 2. POST: Create a new pet listing (FIXED SUBMIT ERROR)
-  
+  app.post("/add-pet", verifyToken, async (req, res) => {
+    try {
+      const petData = req.body;
+
+      petData.ownerEmail = petData.ownerEmail || "user@example.com";
+
+      petData.status = "available";
+      petData.adopted = false;
+      petData.createdAt = new Date();
+
+      const result = await petCollection.insertOne(petData);
+
+      res.status(201).json({
+        success: true,
+        insertedId: result.insertedId,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to add pet" });
+    }
+  });
   // get Add this route to your server.js
  
 
