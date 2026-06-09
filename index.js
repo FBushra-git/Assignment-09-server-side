@@ -256,7 +256,46 @@ async function run() {
   });
 
   // 6. GET Route: Directory Fetch with Live Filter Metrics
-  
+  app.get("/all-pets", async (req, res) => {
+    try {
+      const { search, species, sort, page = 1, limit = 9 } = req.query;
+
+      let databaseQueryFilter = {};
+
+      if (search) {
+        databaseQueryFilter.petName = { $regex: search, $options: "i" };
+      }
+
+      if (species) {
+        databaseQueryFilter.species = { $in: species.split(",") };
+      }
+
+      let databaseSortRule = {};
+      if (sort === "fee-low") databaseSortRule.adoptionFee = 1;
+      else if (sort === "fee-high") databaseSortRule.adoptionFee = -1;
+      else databaseSortRule.createdAt = -1;
+
+      const skip = (Number(page) - 1) * Number(limit);
+
+      const pets = await petCollection
+        .find(databaseQueryFilter)
+        .sort(databaseSortRule)
+        .skip(skip)
+        .limit(Number(limit))
+        .toArray();
+
+      const total = await petCollection.countDocuments(databaseQueryFilter);
+
+      res.json({
+        pets,
+        total,
+        totalPages: Math.ceil(total / limit),
+        currentPage: Number(page),
+      });
+    } catch (err) {
+      res.status(500).json({ error: "Pagination failed" });
+    }
+  });
 
   // 7. GET: Fetch all adoption requests
   
