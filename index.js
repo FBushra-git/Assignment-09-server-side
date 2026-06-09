@@ -298,7 +298,14 @@ async function run() {
   });
 
   // 7. GET: Fetch all adoption requests
-  
+  app.get("/adopt-requests", verifyToken, async (req, res) => {
+    try {
+      const result = await adoptRequestsCollection.find().toArray();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch adoption records" });
+    }
+  });
 
   app.patch("/adopt-requests/:id", verifyToken, async (req, res) => {
     try {
