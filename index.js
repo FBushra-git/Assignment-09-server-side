@@ -108,7 +108,26 @@ async function run() {
   });
 
   // 3. DELETE: Remove a pet listing by ID (FIXED)
-  
+  app.delete("/add-pet/:id", verifyToken, async (req, res) => {
+    try {
+      const petId = req.params.id;
+      let query = {};
+      try {
+        query = { _id: new ObjectId(petId) };
+      } catch {
+        query = { _id: petId };
+      }
+
+      const result = await petCollection.deleteOne(query);
+      if (result.deletedCount === 1) {
+        res.json({ success: true, message: "Pet deleted successfully" });
+      } else {
+        res.status(404).json({ error: "Pet profile not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Internal server error during deletion" });
+    }
+  });
 
   // 4. PUT: Complete update mechanism for editing pet details (FIXED)
   
