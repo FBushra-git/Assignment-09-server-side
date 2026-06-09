@@ -89,7 +89,23 @@ async function run() {
     }
   });
   // get Add this route to your server.js
- 
+   app.get("/add-pet/:id", verifyToken, async (req, res) => {
+    try {
+      const { id } = req.params;
+      let query = {};
+      try {
+        query = { _id: new ObjectId(id) };
+      } catch {
+        query = { _id: id };
+      }
+
+      const pet = await petCollection.findOne(query);
+      if (!pet) return res.status(404).json({ error: "Pet not found" });
+      res.json(pet);
+    } catch (error) {
+      res.status(500).json({ error: "Server error" });
+    }
+  });
 
   // 3. DELETE: Remove a pet listing by ID (FIXED)
   
