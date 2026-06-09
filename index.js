@@ -130,7 +130,33 @@ async function run() {
   });
 
   // 4. PUT: Complete update mechanism for editing pet details (FIXED)
-  
+  app.put("/add-pet/:id", verifyToken, async (req, res) => {
+    try {
+      const petId = req.params.id;
+      const targetUpdates = req.body;
+      let queryObj = {};
+      try {
+        queryObj = { _id: new ObjectId(petId) };
+      } catch {
+        queryObj = { _id: petId };
+      }
+
+      // Delete _id from payload if it accidentally passed through to prevent immutable field errors
+      delete targetUpdates._id;
+
+      const runModifyPipeline = await petCollection.updateOne(queryObj, {
+        $set: targetUpdates,
+      });
+
+      if (runModifyPipeline.matchedCount === 1) {
+        res.json({ success: true, message: "Asset layout changes updated." });
+      } else {
+        res.status(404).json({ error: "Document reference mismatch." });
+      }
+    } catch (err) {
+      res.status(500).json({ error: "Server updating transaction failure." });
+    }
+  });
 
   // 5. POST: Submit an adoption request with full security guards
   
