@@ -159,7 +159,101 @@ async function run() {
   });
 
   // 5. POST: Submit an adoption request with full security guards
-  
+  app.post("/adopt-requests", verifyToken, async (req, res) => {
+    try {
+      const {
+        petId,
+        petitionerEmail,
+        ownerEmail,
+        petName,
+        imageUrl,
+        pickupDate,
+        requestDate,
+        message,
+        userName,
+      } = req.body;
+
+      let petQuery = {};
+      try {
+        petQuery = { _id: new ObjectId(petId) };
+      } catch {
+        petQuery = { _id: petId };
+      }
+
+      const targetedPetProfile = await petCollection.findOne(petQuery);
+
+      if (
+        petitionerEmail?.trim().toLowerCase() ===
+        targetedPetProfile.ownerEmail?.trim().toLowerCase()
+      ) {
+        return res.status(403).json({
+          success: false,
+          error: "You cannot adopt your own pet!",
+        });
+      }
+      if (!targetedPetProfile) {
+        return res.status(404).json({
+          success: false,
+          error: "Target pet record profile not found.",
+        });
+      }
+
+      if (
+        targetedPetProfile.status === "adopted" ||
+        targetedPetProfile.adopted === true
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: "This pet has already been adopted!",
+        });
+      }
+
+      const duplicateApplication = await adoptRequestsCollection.findOne({
+        petId,
+        petitionerEmail,
+      });
+
+      if (duplicateApplication) {
+        return res.status(400).json({
+          success: false,
+          error: "You already have a pending application file for this pet!",
+        });
+      }
+
+      const result = await adoptRequestsCollection.insertOne({
+        petId,
+        petName,
+        imageUrl,
+        ownerEmail: ownerEmail || "seller@example.com",
+        petitionerEmail,
+        pickupDate,
+        requestDate,
+        message,
+        userName,
+        status: "pending",
+        createdAt: new Date(),
+      });
+      await petCollection.updateOne(
+        { _id: new ObjectId(petId) },
+        {
+          $set: {
+            status: "pending",
+          },
+        },
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Request saved successfully!",
+        result,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        error: "Failed to log adoption submission to DB",
+      });
+    }
+  });
 
   // 6. GET Route: Directory Fetch with Live Filter Metrics
   
