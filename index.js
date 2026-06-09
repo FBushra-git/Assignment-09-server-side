@@ -58,7 +58,14 @@ async function run() {
   const adoptRequestsCollection = db.collection("adopt-requests");
 
   // 1. GET: Fetch all pets for your dashboard view/edit list
-  
+  app.get("/add-pet", verifyToken, async (req, res) => {
+    try {
+      const result = await petCollection.find().toArray();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch pets" });
+    }
+  });
 
   // 2. POST: Create a new pet listing (FIXED SUBMIT ERROR)
   
